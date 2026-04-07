@@ -1,0 +1,807 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Книжный помощник | Управление библиотекой</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Roboto', 'Noto Sans', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #e9f0f5 0%, #d9e2ec 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 24px;
+        }
+
+        /* главное окно приложения (аналог Windows Forms) */
+        .app-container {
+            width: 900px;
+            max-width: 100%;
+            background: #fefefe;
+            border-radius: 28px;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        /* MenuStrip стилизация */
+        .menu-strip {
+            background: #2c3e4e;
+            color: white;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 8px 16px;
+            border-bottom: 1px solid #1e2f3a;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .menu-item {
+            position: relative;
+            display: inline-block;
+        }
+
+        .menu-button {
+            background: transparent;
+            border: none;
+            color: #f0f3f8;
+            font-size: 15px;
+            font-weight: 500;
+            padding: 8px 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.2s;
+            letter-spacing: 0.3px;
+        }
+
+        .menu-button:hover {
+            background: #3e5a6b;
+            color: white;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #ffffff;
+            min-width: 170px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            border-radius: 14px;
+            z-index: 100;
+            top: 40px;
+            left: 0;
+            overflow: hidden;
+            border: 1px solid #cddfe7;
+        }
+
+        .dropdown-content a {
+            color: #1e2f3a;
+            padding: 10px 18px;
+            text-decoration: none;
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.1s;
+            cursor: pointer;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #e6f0f5;
+            color: #0f2b38;
+        }
+
+        .menu-item:hover .dropdown-content {
+            display: block;
+        }
+
+        /* основная область */
+        .main-panel {
+            padding: 28px 24px 32px 24px;
+        }
+
+        /* панель поиска + кнопка быстрого поиска */
+        .search-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            align-items: center;
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 60px;
+            box-shadow: inset 0 1px 2px #00000008, 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .search-input {
+            flex: 3;
+            padding: 12px 18px;
+            border: 1px solid #cbdde6;
+            border-radius: 40px;
+            font-size: 15px;
+            background: white;
+            transition: 0.2s;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #2c7da0;
+            box-shadow: 0 0 0 2px rgba(44,125,160,0.2);
+        }
+
+        .search-btn, .clear-search {
+            background: #2c7da0;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+
+        .clear-search {
+            background: #6c757d;
+        }
+
+        .search-btn:hover {
+            background: #1f5e7a;
+            transform: scale(0.97);
+        }
+        .clear-search:hover {
+            background: #4a555c;
+        }
+
+        /* список книг */
+        .book-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .book-list-header h3 {
+            margin: 0;
+            font-weight: 600;
+            color: #1e3b46;
+            font-size: 1.3rem;
+        }
+
+        .book-counter {
+            background: #e2eaf1;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .listbox {
+            background: white;
+            border: 1px solid #cbdde6;
+            border-radius: 20px;
+            height: 380px;
+            overflow-y: auto;
+            padding: 8px 0;
+            box-shadow: inset 0 1px 3px #0000000c, 0 4px 8px rgba(0,0,0,0.02);
+        }
+
+        .book-item {
+            padding: 12px 20px;
+            border-bottom: 1px solid #e9edf2;
+            cursor: pointer;
+            transition: 0.1s;
+            font-size: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .book-item.selected {
+            background: #d9eef9;
+            border-left: 5px solid #2c7da0;
+            font-weight: 500;
+        }
+
+        .book-item:hover {
+            background: #f1f7fb;
+        }
+
+        .book-text {
+            word-break: break-word;
+        }
+
+        .delete-icon {
+            opacity: 0.5;
+            color: #a94442;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0 8px;
+            border-radius: 30px;
+            transition: 0.1s;
+        }
+        .delete-icon:hover {
+            opacity: 1;
+            background: #f0d8d8;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #8aa0ae;
+            padding: 40px;
+            font-style: italic;
+        }
+
+        /* кнопка быстрого добавления (плюс) */
+        .quick-add {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-add {
+            background: #2c7da0;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-weight: bold;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .btn-add:hover {
+            background: #1f627f;
+            transform: scale(0.98);
+        }
+
+        footer {
+            background: #f0f4f8;
+            padding: 12px 24px;
+            font-size: 12px;
+            text-align: center;
+            color: #4f6f7f;
+            border-top: 1px solid #dee6ed;
+        }
+
+        /* модальный диалог (имитация InputBox) */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-card {
+            background: white;
+            max-width: 380px;
+            width: 90%;
+            border-radius: 32px;
+            padding: 24px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.3);
+            animation: fadeSlide 0.2s ease;
+        }
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateY(20px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        .modal-card input {
+            width: 100%;
+            padding: 12px;
+            margin: 12px 0 8px;
+            border: 1px solid #bdc9d2;
+            border-radius: 28px;
+            font-size: 15px;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .modal-buttons button {
+            padding: 8px 20px;
+            border-radius: 40px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-ok { background: #2c7da0; color: white; }
+        .btn-cancel { background: #e2e6ea; color: #2c3e4e; }
+        h4 { margin: 0 0 6px 0; color: #1e3b46; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- MenuStrip (главное меню) -->
+    <div class="menu-strip">
+        <div class="menu-item">
+            <button class="menu-button">📁 Файл</button>
+            <div class="dropdown-content">
+                <a id="menuOpen">📂 Открыть список...</a>
+                <a id="menuSave">💾 Сохранить как...</a>
+                <hr style="margin: 6px 0; border-color:#ddd;">
+                <a id="menuExit">🚪 Выход</a>
+            </div>
+        </div>
+        <div class="menu-item">
+            <button class="menu-button">📖 Книга</button>
+            <div class="dropdown-content">
+                <a id="menuAdd">➕ Добавить книгу</a>
+                <a id="menuDelete">🗑️ Удалить выбранную</a>
+                <a id="menuFind">🔍 Найти книгу</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-panel">
+        <!-- Панель поиска (интерактивный поиск) -->
+        <div class="search-bar">
+            <input type="text" id="searchInput" class="search-input" placeholder="Поиск по названию или автору...">
+            <button id="searchBtn" class="search-btn">🔍 Найти</button>
+            <button id="clearSearchBtn" class="clear-search">✖ Сброс</button>
+        </div>
+
+        <div class="book-list-header">
+            <h3>📚 Мои книги</h3>
+            <span class="book-counter" id="bookCounter">0 книг</span>
+        </div>
+
+        <!-- Список книг (аналог ListBox) -->
+        <div id="bookListContainer" class="listbox">
+            <!-- динамические элементы будут здесь -->
+            <div class="empty-message">✨ Здесь пока нет книг. Добавьте первую!</div>
+        </div>
+
+        <div class="quick-add">
+            <button id="quickAddBtn" class="btn-add">+ Добавить книгу</button>
+        </div>
+    </div>
+    <footer>
+        📖 Книжный помощник | Добавляйте, удаляйте, ищите, сохраняйте в файл
+    </footer>
+</div>
+
+<!-- Модальное окно (замена InputBox для двух полей: название и автор) -->
+<div id="bookModal" class="modal">
+    <div class="modal-card">
+        <h4>➕ Добавление книги</h4>
+        <label>Название книги:</label>
+        <input type="text" id="modalTitle" placeholder="Например: Мастер и Маргарита" autocomplete="off">
+        <label>Автор:</label>
+        <input type="text" id="modalAuthor" placeholder="Например: Михаил Булгаков" autocomplete="off">
+        <div class="modal-buttons">
+            <button id="modalCancelBtn" class="btn-cancel">Отмена</button>
+            <button id="modalOkBtn" class="btn-ok">Добавить</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для поиска (одно поле) -->
+<div id="searchModal" class="modal">
+    <div class="modal-card">
+        <h4>🔎 Поиск книги</h4>
+        <label>Введите слово или фрагмент (название/автор):</label>
+        <input type="text" id="searchKeyword" placeholder="например: Толстой" autocomplete="off">
+        <div class="modal-buttons">
+            <button id="searchModalCancel" class="btn-cancel">Отмена</button>
+            <button id="searchModalOk" class="btn-ok">Искать</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- Класс управления библиотекой (аналог данных ListBox) ----------
+    class BookManager {
+        constructor() {
+            this.books = [];      // каждый элемент: { display: "Название — Автор", title, author }
+            this.filteredBooks = null;   // если активен поиск, храним отфильтрованные индексы или копию
+            this.searchActive = false;
+            this.lastSearchTerm = "";
+        }
+
+        // добавить книгу
+        addBook(title, author) {
+            if (!title || !author) return false;
+            const trimmedTitle = title.trim();
+            const trimmedAuthor = author.trim();
+            if (trimmedTitle === "" || trimmedAuthor === "") return false;
+            const displayStr = `${trimmedTitle} — ${trimmedAuthor}`;
+            this.books.push({
+                display: displayStr,
+                title: trimmedTitle,
+                author: trimmedAuthor
+            });
+            this.clearSearch(); // после добавления сбрасываем активный поиск, чтобы показать весь список
+            return true;
+        }
+
+        // удалить по индексу (в исходном массиве, с учётом фильтрации)
+        deleteBookByDisplayIndex(displayIndex) {
+            let realIndex = displayIndex;
+            if (this.searchActive && this.filteredBooks) {
+                if (displayIndex >= 0 && displayIndex < this.filteredBooks.length) {
+                    realIndex = this.filteredBooks[displayIndex];
+                } else {
+                    return false;
+                }
+            }
+            if (realIndex >= 0 && realIndex < this.books.length) {
+                this.books.splice(realIndex, 1);
+                // после удаления пересчитываем фильтрацию если активна
+                if (this.searchActive) {
+                    this.applySearch(this.lastSearchTerm);
+                } else {
+                    this.clearSearch();
+                }
+                return true;
+            }
+            return false;
+        }
+
+        // поиск по title/author (регистронезависимый)
+        applySearch(term) {
+            this.lastSearchTerm = term;
+            if (!term || term.trim() === "") {
+                this.searchActive = false;
+                this.filteredBooks = null;
+                return this.books;
+            }
+            const lowerTerm = term.trim().toLowerCase();
+            const filteredIndices = [];
+            for (let i = 0; i < this.books.length; i++) {
+                const book = this.books[i];
+                if (book.title.toLowerCase().includes(lowerTerm) || book.author.toLowerCase().includes(lowerTerm)) {
+                    filteredIndices.push(i);
+                }
+            }
+            this.searchActive = true;
+            this.filteredBooks = filteredIndices;
+            return this.getCurrentDisplayList();
+        }
+
+        clearSearch() {
+            this.searchActive = false;
+            this.filteredBooks = null;
+            this.lastSearchTerm = "";
+        }
+
+        getCurrentDisplayList() {
+            if (this.searchActive && this.filteredBooks) {
+                return this.filteredBooks.map(idx => this.books[idx]);
+            }
+            return [...this.books];
+        }
+
+        // для отрисовки
+        getAllDisplayStrings() {
+            const list = this.getCurrentDisplayList();
+            return list.map(book => book.display);
+        }
+
+        // получить все книги в формате строк для сохранения
+        getAllRawStrings() {
+            return this.books.map(book => book.display);
+        }
+
+        // загрузить из массива строк (формат "Название — Автор")
+        loadFromStringArray(lines) {
+            const newBooks = [];
+            for (let line of lines) {
+                line = line.trim();
+                if (line === "") continue;
+                // разбираем последний разделитель " — " (длинное тире)
+                let lastIndex = line.lastIndexOf(" — ");
+                if (lastIndex !== -1) {
+                    let title = line.substring(0, lastIndex);
+                    let author = line.substring(lastIndex + 3);
+                    if (title && author) {
+                        newBooks.push({ display: line, title: title.trim(), author: author.trim() });
+                    } else {
+                        // если не удалось корректно, сохраним как есть, но заглушка
+                        newBooks.push({ display: line, title: line, author: "Неизвестный" });
+                    }
+                } else {
+                    // резерв: если нет разделителя
+                    newBooks.push({ display: line, title: line, author: "Неизвестный" });
+                }
+            }
+            if (newBooks.length > 0) {
+                this.books = newBooks;
+            } else {
+                this.books = [];
+            }
+            this.clearSearch();
+        }
+    }
+
+    // ---------- UI Контроллер ----------
+    const bookManager = new BookManager();
+
+    // DOM элементы
+    const bookContainer = document.getElementById("bookListContainer");
+    const bookCounterSpan = document.getElementById("bookCounter");
+    const searchInput = document.getElementById("searchInput");
+    const searchBtn = document.getElementById("searchBtn");
+    const clearSearchBtn = document.getElementById("clearSearchBtn");
+    const quickAddBtn = document.getElementById("quickAddBtn");
+    // меню элементы
+    const menuOpen = document.getElementById("menuOpen");
+    const menuSave = document.getElementById("menuSave");
+    const menuExit = document.getElementById("menuExit");
+    const menuAdd = document.getElementById("menuAdd");
+    const menuDelete = document.getElementById("menuDelete");
+    const menuFind = document.getElementById("menuFind");
+
+    // модальные окна
+    const bookModal = document.getElementById("bookModal");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalAuthor = document.getElementById("modalAuthor");
+    const modalOk = document.getElementById("modalOkBtn");
+    const modalCancel = document.getElementById("modalCancelBtn");
+
+    const searchModal = document.getElementById("searchModal");
+    const searchKeyword = document.getElementById("searchKeyword");
+    const searchModalOk = document.getElementById("searchModalOk");
+    const searchModalCancel = document.getElementById("searchModalCancel");
+
+    let selectedBookIndex = -1;   // индекс в отображаемом списке (для удаления/подсветки)
+
+    // отрисовка списка
+    function renderBookList() {
+        const displayBooks = bookManager.getCurrentDisplayList();
+        bookContainer.innerHTML = "";
+        if (displayBooks.length === 0) {
+            const emptyDiv = document.createElement("div");
+            emptyDiv.className = "empty-message";
+            emptyDiv.innerText = bookManager.searchActive ? "🔍 Ничего не найдено" : "📭 Список пуст. Добавьте книгу!";
+            bookContainer.appendChild(emptyDiv);
+            bookCounterSpan.innerText = `0 книг`;
+            selectedBookIndex = -1;
+            return;
+        }
+
+        displayBooks.forEach((book, idx) => {
+            const bookDiv = document.createElement("div");
+            bookDiv.className = "book-item";
+            if (selectedBookIndex === idx) bookDiv.classList.add("selected");
+            const textSpan = document.createElement("span");
+            textSpan.className = "book-text";
+            textSpan.innerText = book.display;
+            const delSpan = document.createElement("span");
+            delSpan.className = "delete-icon";
+            delSpan.innerHTML = "🗑";
+            delSpan.title = "Удалить книгу";
+            delSpan.onclick = (e) => {
+                e.stopPropagation();
+                if (confirm(`Удалить книгу "${book.display}"?`)) {
+                    bookManager.deleteBookByDisplayIndex(idx);
+                    if (selectedBookIndex === idx) selectedBookIndex = -1;
+                    else if (selectedBookIndex > idx) selectedBookIndex--;
+                    renderBookList();
+                }
+            };
+            bookDiv.appendChild(textSpan);
+            bookDiv.appendChild(delSpan);
+            bookDiv.onclick = () => {
+                // выделение элемента
+                selectedBookIndex = idx;
+                renderBookList(); // перерисовка с выделением
+            };
+            bookContainer.appendChild(bookDiv);
+        });
+        const totalDisplayCount = displayBooks.length;
+        const originalTotal = bookManager.books.length;
+        if (bookManager.searchActive) {
+            bookCounterSpan.innerText = `Найдено: ${totalDisplayCount} / ${originalTotal}`;
+        } else {
+            bookCounterSpan.innerText = `${totalDisplayCount} ${getDeclension(totalDisplayCount)}`;
+        }
+    }
+
+    function getDeclension(n) {
+        if (n % 10 === 1 && n % 100 !== 11) return "книга";
+        if ([2,3,4].includes(n % 10) && ![12,13,14].includes(n % 100)) return "книги";
+        return "книг";
+    }
+
+    // добавление через модалку
+    function showAddBookModal() {
+        modalTitle.value = "";
+        modalAuthor.value = "";
+        bookModal.style.display = "flex";
+        modalTitle.focus();
+    }
+
+    function closeBookModal() {
+        bookModal.style.display = "none";
+    }
+
+    function handleAddBookFromModal() {
+        const title = modalTitle.value.trim();
+        const author = modalAuthor.value.trim();
+        if (title === "" || author === "") {
+            alert("Пожалуйста, заполните и название, и автора.");
+            return;
+        }
+        const success = bookManager.addBook(title, author);
+        if (success) {
+            renderBookList();
+            closeBookModal();
+        } else {
+            alert("Ошибка добавления книги.");
+        }
+    }
+
+    // удаление выделенной книги
+    function deleteSelectedBook() {
+        if (selectedBookIndex === -1) {
+            alert("Сначала выберите книгу в списке.");
+            return;
+        }
+        const displayList = bookManager.getCurrentDisplayList();
+        if (selectedBookIndex >= 0 && selectedBookIndex < displayList.length) {
+            const bookToDelete = displayList[selectedBookIndex];
+            if (confirm(`Удалить книгу "${bookToDelete.display}"?`)) {
+                bookManager.deleteBookByDisplayIndex(selectedBookIndex);
+                selectedBookIndex = -1;
+                renderBookList();
+            }
+        } else {
+            alert("Некорректный выбор");
+        }
+    }
+
+    // поиск через отдельное модальное окно (стандартный диалог)
+    function showSearchDialog() {
+        searchKeyword.value = "";
+        searchModal.style.display = "flex";
+        searchKeyword.focus();
+    }
+
+    function performSearchFromModal() {
+        let keyword = searchKeyword.value.trim();
+        if (keyword === "") {
+            alert("Введите слово для поиска.");
+            return;
+        }
+        bookManager.applySearch(keyword);
+        // обновляем поисковое поле сверху
+        searchInput.value = keyword;
+        selectedBookIndex = -1;
+        renderBookList();
+        closeSearchModal();
+    }
+
+    function closeSearchModal() {
+        searchModal.style.display = "none";
+    }
+
+    // поиск через верхнюю панель
+    function performSearchFromBar() {
+        let term = searchInput.value.trim();
+        if (term === "") {
+            bookManager.clearSearch();
+            renderBookList();
+            selectedBookIndex = -1;
+            return;
+        }
+        bookManager.applySearch(term);
+        selectedBookIndex = -1;
+        renderBookList();
+    }
+
+    function resetSearch() {
+        searchInput.value = "";
+        bookManager.clearSearch();
+        renderBookList();
+        selectedBookIndex = -1;
+    }
+
+    // --- Файловый ввод/вывод (имитация OpenFileDialog / SaveFileDialog) ---
+    function openFile() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.txt,.books';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const content = ev.target.result;
+                const lines = content.split(/\r?\n/);
+                bookManager.loadFromStringArray(lines);
+                selectedBookIndex = -1;
+                renderBookList();
+                alert(`Загружено ${bookManager.books.length} книг.`);
+            };
+            reader.onerror = () => alert("Ошибка чтения файла");
+            reader.readAsText(file, "UTF-8");
+        };
+        input.click();
+    }
+
+    function saveFile() {
+        const booksData = bookManager.getAllRawStrings();
+        if (booksData.length === 0) {
+            alert("Нет книг для сохранения.");
+            return;
+        }
+        const blob = new Blob([booksData.join("\n")], {type: "text/plain"});
+        const a = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        a.href = url;
+        a.download = "books_list.txt";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        alert("Список сохранён!");
+    }
+
+    function exitApp() {
+        if (confirm("Выйти из приложения? Все несохранённые данные останутся в браузере.")) {
+            // Очищаем данные (опционально, но симуляция выхода)
+            if (confirm("Очистить текущий список книг перед выходом?")) {
+                bookManager.books = [];
+                bookManager.clearSearch();
+                renderBookList();
+            }
+            alert("Приложение закрыто (обновите страницу для перезапуска)");
+            // Можно также заблокировать интерфейс, но для имитации просто выводим сообщение
+        }
+    }
+
+    // --- Инициализация событий ---
+    function bindEvents() {
+        quickAddBtn.onclick = showAddBookModal;
+        menuAdd.onclick = showAddBookModal;
+        menuDelete.onclick = deleteSelectedBook;
+        menuFind.onclick = showSearchDialog;
+        menuOpen.onclick = openFile;
+        menuSave.onclick = saveFile;
+        menuExit.onclick = exitApp;
+        searchBtn.onclick = performSearchFromBar;
+        clearSearchBtn.onclick = resetSearch;
+        searchInput.addEventListener("keypress", (e) => { if (e.key === "Enter") performSearchFromBar(); });
+        
+        modalOk.onclick = handleAddBookFromModal;
+        modalCancel.onclick = closeBookModal;
+        window.onclick = (e) => { if (e.target === bookModal) closeBookModal(); if (e.target === searchModal) closeSearchModal(); };
+        searchModalOk.onclick = performSearchFromModal;
+        searchModalCancel.onclick = closeSearchModal;
+    }
+
+    // начальные демо-книги для примера
+    function initDemo() {
+        bookManager.addBook("Мастер и Маргарита", "Михаил Булгаков");
+        bookManager.addBook("Преступление и наказание", "Фёдор Достоевский");
+        bookManager.addBook("Война и мир", "Лев Толстой");
+        bookManager.addBook("Маленький принц", "Антуан де Сент-Экзюпери");
+        renderBookList();
+    }
+
+    bindEvents();
+    initDemo();
+</script>
+</body>
+<footer class="footer">
+    <p>&copy; 2026г. Макаров, Аметов и Куртсеитов.<br> </p>
+</footer>
+</html>
